@@ -22,3 +22,10 @@ Depends on your system, install **lxml-3.6.0-cp35-cp35m-win32.whl** or
 ```
 python discord_bns_bot.py
 ```
+## Usage
+```
+!help 
+  - Show Command List  
+!p [Character Name]
+  - Show Character Stats
+```
