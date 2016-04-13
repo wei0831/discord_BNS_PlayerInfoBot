@@ -9,12 +9,22 @@ import discord
 import getpass
 
 ################################################################################
-#   USER INFO
+#   USER SETTING
 ################################################################################
 # 'na' or 'eu'
 BNS_REGION = 'na'
-DISCORD_USER_EMAIL = None
-DISCORD_USER_PSW = None
+# Your Discord Email
+DISCORD_USER_EMAIL = None #'user@example.com'
+# Your Discord Password
+DISCORD_USER_PSW = None   #'userpassword'
+
+# Only check message from certain server
+WATCH_FOR_SERVER = False
+SERVER_LIST = []
+
+# Only check message from certain channel
+WATCH_FOR_CHANNEL = False
+CHANNEL_LIST = []
 
 ################################################################################
 #   Data Class
@@ -119,7 +129,7 @@ class Character:
         if self.error:
             return '```\n' \
                    '==== Character Profile ====\n' \
-                   'Character Not Found !!' \
+                   'Character Not Found !!\n' \
                    '============================\n' \
                    '```\n'
 
@@ -148,6 +158,18 @@ client = discord.Client(cache_auth=False)
 async def on_message(msg):
     ''' Detect message in discord
     '''
+    # Ignore slef's message
+    if msg.author.id == client.user.id:
+        return
+        
+    # Only respond to messages form certian servers
+    if WATCH_FOR_SERVER and msg.channel.server.name not in SERVER_LIST:
+        return
+
+    # Only respond to messages form certian channels
+    if WATCH_FOR_CHANNEL and msg.channel.name not in CHANNEL_LIST:
+        return
+
     if msg.content.startswith('!help'):
         result = '```\n' \
               '==== Command Lists ====\n' \
