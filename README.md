@@ -24,8 +24,10 @@ python discord_bns_bot.py
 ```
 ## Usage
 ```
-!help 
+!help
   - Show Command List  
 !p [Character Name]
   - Show Character Stats
+!b [Number of People] [Market Price]
+  - Smart Bid
 ```

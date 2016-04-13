@@ -26,6 +26,9 @@ SERVER_LIST = []
 WATCH_FOR_CHANNEL = False
 CHANNEL_LIST = []
 
+# Commision percentage
+SMART_BID_TAX = 0.95
+
 ################################################################################
 #   Data Class
 ################################################################################
@@ -148,6 +151,42 @@ class Character:
         return result.format(name=self.name, ID=self.id, server=self.server, class_name=self.class_name, level=self.level, hmlevel = self.hmlevel, faction=self.faction, factionLevel=self.factionLevel, guild=self.guild, weapon=self.weapon_name, weapon_durability=self.weapon_durability, attack_power=self.attack_power)
 
 ################################################################################
+#   Smart Bid Class
+################################################################################
+class Bid:
+    def __init__(self, people, marketprice):
+        self.people = None
+        self.marketprice = None
+        self.maxBid = None
+        self.maxBidIfSell = None
+        self.error = False
+
+        try:
+            self.people = int(people)
+            self.marketprice = float(marketprice)
+        except ValueError:
+            self.error = True
+            return
+
+        self.maxBid = self.marketprice * ((self.people - 1) / self.people)
+        self.maxBidIfSell = self.maxBid * SMART_BID_TAX
+
+    def format(self):
+        if self.error:
+            return '```\nSomething went wrong...\n```\n'
+
+        str = '```\n' \
+              '======== Smart Bid ========\n' \
+              'People in Group: {people}\n' \
+              'Market Price: {marketprice}\n' \
+              'Max Bid: {maxBid:.2f}\n' \
+              'Max Bid if selling: {maxBidIfSell:.2f}\n' \
+              '============================\n' \
+              '```\n'
+        return str.format(people=self.people, marketprice=self.marketprice, maxBid=self.maxBid, maxBidIfSell=self.maxBidIfSell)
+
+
+################################################################################
 #   Discord
 ################################################################################
 print("==== Discord BNS Character Info Search Bot ====")
@@ -161,7 +200,7 @@ async def on_message(msg):
     # Ignore slef's message
     if msg.author.id == client.user.id:
         return
-        
+
     # Only respond to messages form certian servers
     if WATCH_FOR_SERVER and msg.channel.server.name not in SERVER_LIST:
         return
@@ -174,6 +213,8 @@ async def on_message(msg):
         result = '```\n' \
               '==== Command Lists ====\n' \
               '\t!p [Character Name] - Show Character Stats\n' \
+              '\t!b [Number of People] [Market Price] - Smart Bid\n' \
+              '========================\n' \
               '```\n'
         await client.send_message(msg.channel, result)
 
@@ -182,6 +223,14 @@ async def on_message(msg):
         character = Character(' '.join(args[1:]))
         await character.parse()
         await client.send_message(msg.channel, character.format())
+
+    elif msg.content.startswith('!b'):
+        args = msg.content.split(' ')
+        if len(args) < 3:
+            await client.send_message(msg.channel, "```\nCommand Syntax:\n\t!b [Number of People] [Market Price]\n```\n")
+        else:
+            bid = Bid(args[1], args[2])
+            await client.send_message(msg.channel, bid.format())
 
 @client.event
 async def on_ready():
