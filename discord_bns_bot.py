@@ -8,8 +8,6 @@ from lxml.html import fromstring
 import discord
 import getpass
 
-BNS_WEB_URL = 'http://{region}-bns.ncsoft.com/ingame/bs/character/profile?c={name}'
-
 ################################################################################
 #   USER SETTING
 ################################################################################
@@ -30,6 +28,24 @@ CHANNEL_LIST = []
 
 # Commision percentage
 SMART_BID_TAX = 0.95
+
+################################################################################
+#   PROGRAM SETTING
+################################################################################
+BNS_WEB_URL = 'http://{region}-bns.ncsoft.com/ingame/bs/character/profile?c={name}'
+# Stats
+HP = 44
+DEFENSE = 48
+ATK_POWER = 0
+CRIT_RATE = 24
+CRIT_DMG = 28
+# Equipment
+WEAPON = 0
+RING = 6
+EARING = 2
+NECKLACE = 1
+BRACELET = 4
+BELT = 8
 
 ################################################################################
 #   Data Class
@@ -53,9 +69,9 @@ class Character:
         self.faction = None
         self.factionLevel = None
         self.guild = None
-        self.weapon_name = None
         self.weapon_durability = None
-        self.attack_power = None
+        self.stats = None
+        self.equips = None
         self.error = False
 
     async def parse(self):
@@ -79,17 +95,6 @@ class Character:
         playerHMLv = content.xpath('//span[@class="masteryLv"]/text()')
         if len(playerHMLv) != 0:
             self.hmlevel = playerHMLv[0]
-
-        # Player Weapon
-        playerWeapon = content.xpath('//div[@class="wrapWeapon"]/div/p/img')
-        if len(playerWeapon) != 0:
-            self.weapon_name = playerWeapon[0].get('alt')
-            #self.weapon_link = weapon_node[0].get('src')
-
-        # Player Weapon Durability
-        playerWeaponDurability = content.xpath('//div[@class="wrapWeapon"]/div/div[@class="quality"]/span[@class="text"]/text()')
-        if len(playerWeaponDurability) != 0:
-            self.weapon_durability = playerWeaponDurability[0]
 
         # Player Info
         playerInfo = content.xpath('//dd[@class="desc"]/ul/li/text()')
@@ -121,10 +126,17 @@ class Character:
             self.faction = faction_texts[0]
             self.factionLevel = faction_texts[1]
 
-        # Player Attack Power
-        playerAP = content.xpath('//div[@class="attack"]/h3/span[@class="stat-point"]/text()')
-        if len(playerAP) != 0:
-            self.attack_power = playerAP[0]
+        # Player Stats
+        self.stats = content.xpath('//span[@class="stat-point"]/text()')
+
+        # Player Equipments
+        self.equips = content.xpath('//div[@class="name"]/span/text()')
+
+        # Player Weapon Durability
+        playerWeaponDurability = content.xpath('//div[@class="wrapWeapon"]/div/div[@class="quality"]/span[@class="text"]/text()')
+        if len(playerWeaponDurability) != 0:
+            self.weapon_durability = playerWeaponDurability[0]
+
 
     def format(self):
         """ Output character data as string
@@ -138,17 +150,28 @@ class Character:
             return result
 
         result =  '```\n' \
-               '==== Character Profile ====\n' \
-               'Name: {name} [{ID}]\n' \
-               'Server: {server} \n' \
+               '================= Character Profile ===================\n' \
+               'Name:  {name} [{ID}]\n' \
+               'Guild: {guild} [{server}]\n' \
+               'Faction: {faction} | {factionLevel}\n' \
                'Class: {class_name}\n' \
                'Level: {level} | {hmlevel}\n' \
-               'Faction: {faction} | {factionLevel}\n' \
-               'Guild: {guild}\n' \
-               'Weapon: {weapon} [{weapon_durability}]\n' \
+               '--------------------------------------------------------\n' \
                'Attack Power: {attack_power}\n' \
-               '============================\n' \
+               'Crit Rate:    {crit_rate}\n' \
+               'Crit Damage:  {crit_dmg}\n' \
+               'HP:           {hp}\n' \
+               'Defense:      {defense}\n' \
+               '--------------------------------------------------------\n' \
+               'Weapon:   {weapon} [{weapon_durability}]\n' \
+               'Ring:     {ring}\n' \
+               'Earing:   {earing}\n' \
+               'Necklace: {necklace}\n' \
+               'Bracelet: {bracelet}\n' \
+               'Belt:     {belt}\n' \
+               '========================================================\n' \
                '```\n'
+
         return result.format(name=self.name,
             ID=self.id,
             server=self.server,
@@ -158,9 +181,18 @@ class Character:
             faction=self.faction,
             factionLevel=self.factionLevel,
             guild=self.guild,
-            weapon=self.weapon_name,
+            weapon=self.equips[WEAPON],
             weapon_durability=self.weapon_durability,
-            attack_power=self.attack_power)
+            ring=self.equips[RING],
+            earing=self.equips[EARING],
+            necklace=self.equips[NECKLACE],
+            bracelet=self.equips[BRACELET],
+            belt=self.equips[BELT],
+            attack_power=self.stats[ATK_POWER],
+            crit_rate=self.stats[CRIT_RATE],
+            crit_dmg=self.stats[CRIT_DMG],
+            hp=self.stats[HP],
+            defense=self.stats[DEFENSE])
 
 
 ################################################################################
@@ -189,12 +221,12 @@ class Bid:
             return '```\nSomething went wrong...\n```\n'
 
         str = '```\n' \
-              '======== Smart Bid ========\n' \
+              '========== Smart Bid ==========\n' \
               'People in Group: {people}\n' \
               'Market Price: {marketprice}\n' \
               'Max Bid: {maxBid:.2f}\n' \
               'Max Bid if selling: {maxBidIfSell:.2f}\n' \
-              '============================\n' \
+              '================================\n' \
               '```\n'
         return str.format(people=self.people, marketprice=self.marketprice, maxBid=self.maxBid, maxBidIfSell=self.maxBidIfSell)
 
