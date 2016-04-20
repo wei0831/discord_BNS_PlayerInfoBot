@@ -8,6 +8,8 @@ from lxml.html import fromstring
 import discord
 import getpass
 
+BNS_WEB_URL = 'http://{region}-bns.ncsoft.com/ingame/bs/character/profile?c={name}'
+
 ################################################################################
 #   USER SETTING
 ################################################################################
@@ -59,10 +61,8 @@ class Character:
     async def parse(self):
         """ Parsing character data from accessing BNS web API
         """
-        error_str = b'<h1>This service is temporarily unavailable.</h1>'
-        url = 'http://{region}-bns.ncsoft.com/ingame/bs/character/profile?c={name}'
         # Need to convert space to URL encoding character
-        page = await get(url.format(name=self.name.replace(' ', '%20'), region=BNS_REGION))
+        page = await get(BNS_WEB_URL.format(name=self.name.replace(' ', '%20'), region=BNS_REGION))
         content = await page.read()
         content = fromstring(str(content))
 
@@ -130,11 +130,12 @@ class Character:
         """ Output character data as string
         """
         if self.error:
-            return '```\n' \
+            result = '```\n' \
                    '==== Character Profile ====\n' \
                    'Character Not Found !!\n' \
                    '============================\n' \
                    '```\n'
+            return result
 
         result =  '```\n' \
                '==== Character Profile ====\n' \
@@ -148,7 +149,19 @@ class Character:
                'Attack Power: {attack_power}\n' \
                '============================\n' \
                '```\n'
-        return result.format(name=self.name, ID=self.id, server=self.server, class_name=self.class_name, level=self.level, hmlevel = self.hmlevel, faction=self.faction, factionLevel=self.factionLevel, guild=self.guild, weapon=self.weapon_name, weapon_durability=self.weapon_durability, attack_power=self.attack_power)
+        return result.format(name=self.name,
+            ID=self.id,
+            server=self.server,
+            class_name=self.class_name,
+            level=self.level,
+            hmlevel = self.hmlevel,
+            faction=self.faction,
+            factionLevel=self.factionLevel,
+            guild=self.guild,
+            weapon=self.weapon_name,
+            weapon_durability=self.weapon_durability,
+            attack_power=self.attack_power)
+
 
 ################################################################################
 #   Smart Bid Class
@@ -197,6 +210,7 @@ client = discord.Client(cache_auth=False)
 async def on_message(msg):
     ''' Detect message in discord
     '''
+
     # Ignore slef's message
     if msg.author.id == client.user.id:
         return
@@ -236,6 +250,7 @@ async def on_message(msg):
 async def on_ready():
     print("[SYS] Successfully login as the user: '{user}'".format(user=client.user.name))
     print("[SYS] Monitoring...")
+
 
 ################################################################################
 #   Main
