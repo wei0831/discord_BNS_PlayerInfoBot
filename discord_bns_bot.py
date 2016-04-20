@@ -13,18 +13,23 @@ import getpass
 ################################################################################
 # 'na' or 'eu'
 BNS_REGION = 'na'
+
 # Your Discord Email
-DISCORD_USER_EMAIL = None #'user@example.com'
+DISCORD_USER_EMAIL = None
+
 # Your Discord Password
-DISCORD_USER_PSW = None   #'userpassword'
+DISCORD_USER_PSW = None
 
 # Only check message from certain server
 WATCH_FOR_SERVER = False
-SERVER_LIST = []
+SERVER_LIST = None
 
 # Only check message from certain channel
 WATCH_FOR_CHANNEL = False
-CHANNEL_LIST = []
+CHANNEL_LIST = None
+
+# Check direct message or not
+WATCH_FOR_PRIVATE_MSG = True
 
 # Commision percentage
 SMART_BID_TAX = 0.95
@@ -247,13 +252,17 @@ async def on_message(msg):
     if msg.author.id == client.user.id:
         return
 
-    # Only respond to messages form certian servers
-    if WATCH_FOR_SERVER and msg.channel.server.name not in SERVER_LIST:
-        return
+    if msg.channel.is_private:
+        if not WATCH_FOR_PRIVATE_MSG:
+            return
+    else:
+        # Only respond to messages form certian servers
+        if WATCH_FOR_SERVER and msg.channel.server.name not in SERVER_LIST:
+            return
 
-    # Only respond to messages form certian channels
-    if WATCH_FOR_CHANNEL and msg.channel.name not in CHANNEL_LIST:
-        return
+        # Only respond to messages form certian channels
+        if WATCH_FOR_CHANNEL and msg.channel.name not in CHANNEL_LIST:
+            return
 
     if msg.content.startswith('!help'):
         result = '```\n' \
