@@ -15,18 +15,18 @@ import getpass
 BNS_REGION = 'na'
 
 # Your Discord Email
-DISCORD_USER_EMAIL = None
+DISCORD_USER_EMAIL = None #'user@example.com'
 
 # Your Discord Password
-DISCORD_USER_PSW = None
+DISCORD_USER_PSW = None   #'userpassword'
 
 # Only check message from certain server
 WATCH_FOR_SERVER = False
-SERVER_LIST = None
+SERVER_LIST = []
 
 # Only check message from certain channel
 WATCH_FOR_CHANNEL = False
-CHANNEL_LIST = None
+CHANNEL_LIST = []
 
 # Check direct message or not
 WATCH_FOR_PRIVATE_MSG = True
@@ -37,7 +37,9 @@ SMART_BID_TAX = 0.95
 ################################################################################
 #   PROGRAM SETTING
 ################################################################################
-BNS_WEB_URL = 'http://{region}-bns.ncsoft.com/ingame/bs/character/profile?c={name}'
+BNS_WEB_PROFILE = 'http://{region}-bns.ncsoft.com/ingame/bs/character/profile?c={name}'
+BNS_WEB_SEARCH = 'http://{region}-bns.ncsoft.com/ingame/bs/character/search/info?c={name}'
+
 # Stats
 HP = 44
 DEFENSE = 48
@@ -78,12 +80,13 @@ class Character:
         self.stats = None
         self.equips = None
         self.error = False
+        self.otherChars = None
 
     async def parse(self):
         """ Parsing character data from accessing BNS web API
         """
         # Need to convert space to URL encoding character
-        page = await get(BNS_WEB_URL.format(name=self.name.replace(' ', '%20'), region=BNS_REGION))
+        page = await get(BNS_WEB_PROFILE.format(name=self.name.replace(' ', '%20'), region=BNS_REGION))
         content = await page.read()
         content = fromstring(str(content))
 
@@ -142,6 +145,13 @@ class Character:
         if len(playerWeaponDurability) != 0:
             self.weapon_durability = playerWeaponDurability[0]
 
+        # Find other characters
+        page = await get(BNS_WEB_SEARCH.format(name=self.name.replace(' ', '%20'), region=BNS_REGION))
+        content = await page.read()
+        content = fromstring(str(content))
+
+        firstResult = content.xpath('//dd[@class="desc2"]')[0]
+        self.otherChars = firstResult.xpath('.//ul/li/a/text()')
 
     def format(self):
         """ Output character data as string
@@ -173,9 +183,20 @@ class Character:
                'Earing:   {earing}\n' \
                'Necklace: {necklace}\n' \
                'Bracelet: {bracelet}\n' \
-               'Belt:     {belt}\n' \
-               '========================================================\n' \
-               '```\n'
+               'Belt:     {belt}\n'
+
+        if self.otherChars != None:
+            result += '--------------------------------------------------------\n' \
+                      'Other Characters: '
+            if len(self.otherChars) == 0:
+                result += 'None\n'
+            else:
+                result += '\n'
+                for c in self.otherChars:
+                    result += '\t' + c + '\n'
+
+        result += '========================================================\n' \
+                  '```\n'
 
         return result.format(name=self.name,
             ID=self.id,
